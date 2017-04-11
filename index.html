@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Cubemap Generator</title>
+  <style>
+    body {
+      margin: 1em auto;
+      max-width: 800px;
+    }
+    .settings > * {
+      margin-top: 12px;
+      margin-bottom: 12px;
+    }
+    #cubemap {
+      width: 800px;
+      height: 600px;
+      position: relative;
+      border: 1px solid #888;
+      background: #eee;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Cubemap Generator</h1>
+    <aside>Convert a 360° panoramic image to a cubemap.</aside>
+  </header>
+
+  <main>
+    <section>
+      <h2>Upload</h2>
+      <label>Upload an image: <input id="imageInput" type="file" accept="image/*"></label>
+      <ul>
+        <li>The image should be formatted with the equirectangular projection.</li>
+        <li>The image should have an aspect ratio of 2:1 (the width must be exactly twice the height).</li>
+      </ul>
+      <p>A cubemap will be generated from your image.</p>
+    </section>
+
+    <section class="settings">
+      <h2>Settings</h2>
+      <div>
+        <label>Cube Rotation: <input id="cubeRotation" type="number" min="0" max="359" value="180">°</label>
+      </div>
+      <fieldset title="The resampling algorithm to use when generating the cubemap.">
+        <legend>Interpolation type</legend>
+        <label><input type="radio" name="interpolation" value="lanczos" checked>Lanczos (best but slower)</label>
+        <label><input type="radio" name="interpolation" value="cubic">Cubic (sharper details)</label>
+        <label><input type="radio" name="interpolation" value="linear">Linear (softer details)</label>
+      </fieldset>
+      <fieldset>
+        <legend>Output format</legend>
+        <label><input type="radio" name="format" value="jpg" checked>JPEG</label>
+        <label><input type="radio" name="format" value="png">PNG</label>
+      </fieldset>
+    </section>
+
+    <section>
+      <h2>Output</h2>
+      <p>Click each cube face to save it to your computer.</p>
+      <div id="cubemap">
+        <b id="generating" style="visibility:hidden">Generating...</b>
+        <output id="faces"></output>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      <small>By <a href="https://github.com/jaxry">Lucas Crane</a></small>
+      <br>
+      <small>Design by <a href="http://motherfuckingwebsite.com/">mf</a></small>
+    </p>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
