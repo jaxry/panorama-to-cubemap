@@ -2,7 +2,8 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Cubemap Generator</title>
+  <meta name="description" content="Convert a 360° panorama to a cubemap.">
+  <title>Panorama to Cubemap</title>
   <style>
     body {
       margin: 1em auto;
@@ -25,14 +26,14 @@
 
 <body>
   <header>
-    <h1>Cubemap Generator</h1>
-    <aside>Convert a 360° panoramic image to a cubemap.</aside>
+    <h1>Panorama to Cubemap</h1>
+    <aside>Convert a 360° panorama to six cube faces.</aside>
   </header>
 
   <main>
     <section>
       <h2>Upload</h2>
-      <label>Upload an image: <input id="imageInput" type="file" accept="image/*"></label>
+      <label>Upload a panoramic image: <input id="imageInput" type="file" accept="image/*"></label>
       <ul>
         <li>The image should be formatted with the equirectangular projection.</li>
         <li>The image should have an aspect ratio of 2:1 (the width must be exactly twice the height).</li>
