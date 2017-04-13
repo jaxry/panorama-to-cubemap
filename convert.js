@@ -16,8 +16,8 @@ function copyPixelNearest(read, write, grid) {
       clamp(Math.round(yFrom), 0, read.height - 1)
     );
 
-    for (let c = 0; c < 3; c++) {
-      write.data[to + c] = read.data[nearest + c];
+    for (let channel = 0; channel < 3; channel++) {
+      write.data[to + channel] = read.data[nearest + channel];
     }
   };
 }
@@ -39,10 +39,10 @@ function copyPixelBilinear(read, write) {
     const p01 = readIndex(xl, yr);
     const p11 = readIndex(xr, yr);
 
-    for (let c = 0; c < 3; c++) {
-      const p0 = read.data[p00 + c] * (1 - xf) + read.data[p10 + c] * xf;
-      const p1 = read.data[p01 + c] * (1 - xf) + read.data[p11 + c] * xf;
-      write.data[to + c] = Math.ceil(p0 * (1 - yf) + p1 * yf);
+    for (let channel = 0; channel < 3; channel++) {
+      const p0 = read.data[p00 + channel] * (1 - xf) + read.data[p10 + channel] * xf;
+      const p1 = read.data[p01 + channel] * (1 - xf) + read.data[p11 + channel] * xf;
+      write.data[to + channel] = Math.ceil(p0 * (1 - yf) + p1 * yf);
     }
   };
 }
@@ -69,7 +69,7 @@ function kernelResample(read, write, a, kernel) {
       yKernel[i] = kernel(yFrom - (yStart + i));
     }
 
-    for (let c = 0; c < 3; c++) {
+    for (let channel = 0; channel < 3; channel++) {
       let q = 0;
       for (let i = 0; i < a2; i++) {
         const y = yStart + i;
@@ -78,12 +78,12 @@ function kernelResample(read, write, a, kernel) {
         for (let j = 0; j < a2; j++) {
           const x = xStart + j;
           const index = readIndex(clamp(x, 0, xMax), yClamped);
-          p += read.data[index + c] * xKernel[j];
+          p += read.data[index + channel] * xKernel[j];
 
         }
         q += p * yKernel[i];
       }
-      write.data[to + c] = Math.round(q);
+      write.data[to + channel] = Math.round(q);
     }
   };
 }
@@ -171,11 +171,21 @@ function renderFace({data: readData, face, rotation, interpolation, maxWidth = I
   for (let x = 0; x < faceWidth; x++) {
     for (let y = 0; y < faceHeight; y++) {
       const to = 4*(y * faceWidth + x);
+
+      // make alpha channel opaque
       writeData.data[to + 3] = 255;
+
+      // get position on cube face
+      // face is centered on its perpendicular axis, and is length 2 (diameter of sphere)
       orientation(cube, (2 * (x + 0.5) / faceWidth - 1), (2 * (y + 0.5) / faceHeight - 1));
+
+      // project cube face onto unit sphere
+      // simple cartesian to spherical coordinates conversion
       const r = Math.sqrt(cube.x*cube.x + cube.y*cube.y + cube.z*cube.z);
       const lon = mod(Math.atan2(cube.y, cube.x) + rotation, 2 * Math.PI);
       const lat = Math.acos(cube.z / r);
+
+      // sample texture
       c(readData.width * lon / Math.PI / 2 - 0.5, readData.height * lat / Math.PI - 0.5, to);
       // c(readData.width * (x + 0.5) / faceWidth - 0.5, readData.height * (y + 0.5) / faceHeight - 0.5, to);
     }

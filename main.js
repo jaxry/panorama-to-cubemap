@@ -22,11 +22,11 @@ class Input {
   constructor(id, onChange) {
     this.input = document.getElementById(id);
     this.input.addEventListener('change', onChange);
-    this.attrib = this.input.type === 'checkbox' ? 'checked' : 'value';
+    this.valueAttrib = this.input.type === 'checkbox' ? 'checked' : 'value';
   }
 
   get value() {
-    return this.input[this.attrib];
+    return this.input[this.valueAttrib];
   }
 }
 
@@ -86,12 +86,11 @@ const facePositions = {
   ny: {x: 1, y: 2}
 };
 
-
 let finished = 0;
 let workers = [];
 
 const getDataURL = (function() {
-  const mimeTypes = {
+  const mimeType = {
     'jpg': 'image/jpeg',
     'png': 'image/png'
   };
@@ -100,7 +99,7 @@ const getDataURL = (function() {
     canvas.width = data.width;
     canvas.height = data.height;
     ctx.putImageData(data, 0, 0);
-    return canvas.toDataURL(mimeTypes[extension], 0.95);
+    return canvas.toDataURL(mimeType[extension], 0.95);
   };
 })();
 
