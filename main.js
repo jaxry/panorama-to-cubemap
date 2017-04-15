@@ -99,7 +99,9 @@ const getDataURL = (function() {
     canvas.width = data.width;
     canvas.height = data.height;
     ctx.putImageData(data, 0, 0);
-    return canvas.toDataURL(mimeType[extension], 0.95);
+    return new Promise(resolve => {
+      canvas.toBlob(blob => resolve(URL.createObjectURL(blob)), mimeType[extension], 0.92);
+    });
   };
 })();
 
@@ -153,7 +155,9 @@ function renderFace(data, faceName, position) {
 
   const setDownload = e => {
     const extension = settings.format.value;
-    face.setDownload(getDataURL(e.data.faceData, extension), extension);
+
+    getDataURL(e.data.faceData, extension)
+      .then(url => face.setDownload(url, extension));
 
     finished++;
 
@@ -166,11 +170,12 @@ function renderFace(data, faceName, position) {
 
   const setPreview = e => {
     const imageData = e.data.faceData;
-    face.setPreview(
-      getDataURL(imageData, 'jpg'),
-      imageData.width * position.x,
-      imageData.width * position.y
-    );
+    const x = imageData.width * position.x;
+    const y = imageData.width * position.y;
+
+    getDataURL(imageData, 'jpg')
+      .then(url => face.setPreview(url, x, y));
+
     worker.onmessage = setDownload;
     worker.postMessage(options);
   };
