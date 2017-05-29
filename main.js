@@ -153,10 +153,10 @@ function renderFace(data, faceName, position) {
 
   const worker = new Worker('convert.js');
 
-  const setDownload = e => {
+  const setDownload = ({data: imageData}) => {
     const extension = settings.format.value;
 
-    getDataURL(e.data.faceData, extension)
+    getDataURL(imageData, extension)
       .then(url => face.setDownload(url, extension));
 
     finished++;
@@ -168,10 +168,9 @@ function renderFace(data, faceName, position) {
     }
   };
 
-  const setPreview = e => {
-    const imageData = e.data.faceData;
+  const setPreview = ({data: imageData}) => {
     const x = imageData.width * position.x;
-    const y = imageData.width * position.y;
+    const y = imageData.height * position.y;
 
     getDataURL(imageData, 'jpg')
       .then(url => face.setPreview(url, x, y));

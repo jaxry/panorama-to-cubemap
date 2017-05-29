@@ -7,31 +7,33 @@ function mod(x, n) {
 }
 
 function copyPixelNearest(read, write, grid) {
-  const width = read.width;
+  const {width, height, data} = read;
   const readIndex = (x, y) => 4 * (y * width + x);
+
   return (xFrom, yFrom, to) => {
 
     const nearest = readIndex(
-      clamp(Math.round(xFrom), 0, read.width - 1),
-      clamp(Math.round(yFrom), 0, read.height - 1)
+      clamp(Math.round(xFrom), 0, width - 1),
+      clamp(Math.round(yFrom), 0, height - 1)
     );
 
     for (let channel = 0; channel < 3; channel++) {
-      write.data[to + channel] = read.data[nearest + channel];
+      write.data[to + channel] = data[nearest + channel];
     }
   };
 }
 
 function copyPixelBilinear(read, write) {
-  const width = read.width;
+  const {width, height, data} = read;
   const readIndex = (x, y) => 4 * (y * width + x);
+
   return (xFrom, yFrom, to) => {
-    const xl = clamp(Math.floor(xFrom), 0, read.width - 1);
-    const xr = clamp(Math.ceil(xFrom), 0, read.width - 1);
+    const xl = clamp(Math.floor(xFrom), 0, width - 1);
+    const xr = clamp(Math.ceil(xFrom), 0, width - 1);
     const xf = xFrom - xl;
 
-    const yl = clamp(Math.floor(yFrom), 0, read.height - 1);
-    const yr = clamp(Math.ceil(yFrom), 0, read.height - 1);
+    const yl = clamp(Math.floor(yFrom), 0, height - 1);
+    const yr = clamp(Math.ceil(yFrom), 0, height - 1);
     const yf = yFrom - yl;
 
     const p00 = readIndex(xl, yl);
@@ -40,21 +42,20 @@ function copyPixelBilinear(read, write) {
     const p11 = readIndex(xr, yr);
 
     for (let channel = 0; channel < 3; channel++) {
-      const p0 = read.data[p00 + channel] * (1 - xf) + read.data[p10 + channel] * xf;
-      const p1 = read.data[p01 + channel] * (1 - xf) + read.data[p11 + channel] * xf;
+      const p0 = data[p00 + channel] * (1 - xf) + data[p10 + channel] * xf;
+      const p1 = data[p01 + channel] * (1 - xf) + data[p11 + channel] * xf;
       write.data[to + channel] = Math.ceil(p0 * (1 - yf) + p1 * yf);
     }
   };
 }
 
 function kernelResample(read, write, a, kernel) {
-  const a2 = 2*a;
-
-  const width = read.width;
+  const {width, height, data} = read;
   const readIndex = (x, y) => 4 * (y * width + x);
 
-  const xMax = read.width - 1;
-  const yMax = read.height - 1;
+  const twoA = 2*a;
+  const xMax = width - 1;
+  const yMax = height - 1;
   const xKernel = new Array(4);
   const yKernel = new Array(4);
 
@@ -64,25 +65,27 @@ function kernelResample(read, write, a, kernel) {
     const xStart = xl - a + 1;
     const yStart = yl - a + 1;
 
-    for (let i = 0; i < a2; i++) {
+    for (let i = 0; i < twoA; i++) {
       xKernel[i] = kernel(xFrom - (xStart + i));
       yKernel[i] = kernel(yFrom - (yStart + i));
     }
 
     for (let channel = 0; channel < 3; channel++) {
       let q = 0;
-      for (let i = 0; i < a2; i++) {
+
+      for (let i = 0; i < twoA; i++) {
         const y = yStart + i;
         const yClamped = clamp(y, 0, yMax);
         let p = 0;
-        for (let j = 0; j < a2; j++) {
+        for (let j = 0; j < twoA; j++) {
           const x = xStart + j;
           const index = readIndex(clamp(x, 0, xMax), yClamped);
-          p += read.data[index + channel] * xKernel[j];
+          p += data[index + channel] * xKernel[j];
 
         }
         q += p * yKernel[i];
       }
+
       write.data[to + channel] = Math.round(q);
     }
   };
@@ -112,6 +115,7 @@ function copyPixelLanczos(read, write, grid) {
       return 3 * Math.sin(xp) * Math.sin(xp / 3) / (xp * xp);
     }
   };
+
   return kernelResample(read, write, 3, kernel);
 }
 
@@ -153,16 +157,12 @@ function renderFace({data: readData, face, rotation, interpolation, maxWidth = I
   const faceWidth = Math.min(maxWidth, readData.width / 4);
   const faceHeight = faceWidth;
 
-  // const scale = 160;
-  // const faceWidth = scale * readData.width;
-  // const faceHeight = scale * readData.height;
-
   const cube = {};
   const orientation = orientations[face];
 
   const writeData = new ImageData(faceWidth, faceHeight);
 
-  const c =
+  const copyPixel =
     interpolation === 'linear' ? copyPixelBilinear(readData, writeData) :
     interpolation === 'cubic' ? copyPixelBicubic(readData, writeData) :
     interpolation === 'lanczos' ? copyPixelLanczos(readData, writeData) :
@@ -170,32 +170,27 @@ function renderFace({data: readData, face, rotation, interpolation, maxWidth = I
 
   for (let x = 0; x < faceWidth; x++) {
     for (let y = 0; y < faceHeight; y++) {
-      const to = 4*(y * faceWidth + x);
+      const to = 4 * (y * faceWidth + x);
 
-      // make alpha channel opaque
+      // fill alpha channel
       writeData.data[to + 3] = 255;
 
       // get position on cube face
-      // face is centered on its perpendicular axis, and is length 2 (diameter of sphere)
+      // cube is centered at the origin with a side length of 2
       orientation(cube, (2 * (x + 0.5) / faceWidth - 1), (2 * (y + 0.5) / faceHeight - 1));
 
-      // project cube face onto unit sphere
-      // simple cartesian to spherical coordinates conversion
+      // project cube face onto unit sphere by converting cartesian to spherical coordinates
       const r = Math.sqrt(cube.x*cube.x + cube.y*cube.y + cube.z*cube.z);
       const lon = mod(Math.atan2(cube.y, cube.x) + rotation, 2 * Math.PI);
       const lat = Math.acos(cube.z / r);
 
-      // sample texture
-      c(readData.width * lon / Math.PI / 2 - 0.5, readData.height * lat / Math.PI - 0.5, to);
-      // c(readData.width * (x + 0.5) / faceWidth - 0.5, readData.height * (y + 0.5) / faceHeight - 0.5, to);
+      copyPixel(readData.width * lon / Math.PI / 2 - 0.5, readData.height * lat / Math.PI - 0.5, to);
     }
   }
 
-  postMessage({
-    faceData: writeData
-  });
+  postMessage(writeData);
 }
 
-onmessage = function(e) {
-  renderFace(e.data);
+onmessage = function({data}) {
+  renderFace(data);
 };
