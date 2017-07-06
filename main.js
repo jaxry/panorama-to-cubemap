@@ -63,6 +63,20 @@ function removeChildren(node) {
   }
 }
 
+const mimeType = {
+  'jpg': 'image/jpeg',
+  'png': 'image/png'
+};
+
+function getDataURL(imgData, extension) {
+  canvas.width = imgData.width;
+  canvas.height = imgData.height;
+  ctx.putImageData(imgData, 0, 0);
+  return new Promise(resolve => {
+    canvas.toBlob(blob => resolve(URL.createObjectURL(blob)), mimeType[extension], 0.92);
+  });
+}
+
 const dom = {
   imageInput: document.getElementById('imageInput'),
   faces: document.getElementById('faces'),
@@ -86,25 +100,6 @@ const facePositions = {
   ny: {x: 1, y: 2}
 };
 
-let finished = 0;
-let workers = [];
-
-const getDataURL = (function() {
-  const mimeType = {
-    'jpg': 'image/jpeg',
-    'png': 'image/png'
-  };
-
-  return (data, extension) => {
-    canvas.width = data.width;
-    canvas.height = data.height;
-    ctx.putImageData(data, 0, 0);
-    return new Promise(resolve => {
-      canvas.toBlob(blob => resolve(URL.createObjectURL(blob)), mimeType[extension], 0.92);
-    });
-  };
-})();
-
 function loadImage() {
   const file = dom.imageInput.files[0];
 
@@ -126,6 +121,9 @@ function loadImage() {
     processImage(data);
   });
 }
+
+let finished = 0;
+let workers = [];
 
 function processImage(data) {
   removeChildren(dom.faces);

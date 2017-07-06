@@ -6,7 +6,7 @@ function mod(x, n) {
   return ((x % n) + n) % n;
 }
 
-function copyPixelNearest(read, write, grid) {
+function copyPixelNearest(read, write) {
   const {width, height, data} = read;
   const readIndex = (x, y) => 4 * (y * width + x);
 
@@ -95,8 +95,8 @@ function copyPixelBicubic(read, write) {
   const b = -0.5;
   const kernel = x => {
     x = Math.abs(x);
-    x2 = x*x;
-    x3 = x*x*x;
+    const x2 = x*x;
+    const x3 = x*x*x;
     return x <= 1 ?
       (b + 2)*x3 - (b + 3)*x2 + 1 :
       b*x3 - 5*b*x2 + 8*b*x - 4*b;
@@ -105,7 +105,7 @@ function copyPixelBicubic(read, write) {
   return kernelResample(read, write, 2, kernel);
 }
 
-function copyPixelLanczos(read, write, grid) {
+function copyPixelLanczos(read, write) {
   const kernel = x => {
     if (x === 0) {
       return 1;
