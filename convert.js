@@ -112,11 +112,11 @@ function copyPixelLanczos(read, write) {
     }
     else {
       const xp = Math.PI * x;
-      return 3 * Math.sin(xp) * Math.sin(xp / 3) / (xp * xp);
+      return 5 * Math.sin(xp) * Math.sin(xp / 5) / (xp * xp);
     }
   };
 
-  return kernelResample(read, write, 3, kernel);
+  return kernelResample(read, write, 5, kernel);
 }
 
 const orientations = {
