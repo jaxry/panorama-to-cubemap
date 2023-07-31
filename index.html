@@ -5,6 +5,15 @@
   <meta name="description" content="Convert a 360° panorama to a cubemap.">
   <title>Panorama to Cubemap</title>
   <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #eee;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #222;
+      }
+    }
     body {
       margin: 1em auto;
       max-width: 800px;
@@ -18,7 +27,7 @@
       height: 600px;
       position: relative;
       border: 1px solid #888;
-      background: #eee;
+      background: var(--bg);
       margin-top: 15px;
     }
   </style>
@@ -33,7 +42,7 @@
   <main>
     <section>
       <h2>Upload</h2>
-      <label>Upload a panoramic image: <input id="imageInput" type="file" accept="image/*"></label>
+      <label>Drag and Drop a panoramic image or : <input id="imageInput" type="file" accept="image/*"></label>
       <ul>
         <li>The image should be formatted with the equirectangular projection.</li>
         <li>The image should have an aspect ratio of 2:1 (the width must be exactly twice the height).</li>
@@ -57,11 +66,22 @@
         <label><input type="radio" name="format" value="png" checked>PNG</label>
         <label><input type="radio" name="format" value="jpg">JPEG</label>
       </fieldset>
+      <fieldset>
+        <legend>Output size</legend>
+        <label><input type="radio" name="size" value="64">64</label>
+        <label><input type="radio" name="size" value="128">128</label>
+        <label><input type="radio" name="size" value="256">256</label>
+        <label><input type="radio" name="size" value="512">512</label>
+        <label><input type="radio" name="size" value="1024" checked>1024</label>
+        <label><input type="radio" name="size" value="2048">2048</label>
+        <label><input type="radio" name="size" value="4096">4096</label>
+        <label><input type="radio" name="size" value="from-panorama">1/4 width of panorama</label>
+      </fieldset>
     </section>
 
     <section>
       <h2>Output</h2>
-      <p>Click each cube face to save it to your computer.</p>
+      <fieldset style="border: none" disabled id="save-info">Click <button type="button" id="save">here</button> to all save faces or click each cube face to save it to your computer.</fieldset>
       <div id="cubemap">
         <b id="generating" style="visibility:hidden">Generating...</b>
         <output id="faces"></output>
@@ -77,6 +97,6 @@
     </p>
   </footer>
 
-  <script src="main.js"></script>
+  <script src="main.js" type="module"></script>
 </body>
 </html>
