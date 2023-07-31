@@ -154,9 +154,15 @@ const orientations = {
   }
 };
 
-function renderFace({data: readData, face, rotation, interpolation, maxWidth = Infinity}) {
+function getSize(size, dataWidth) {
+  return (size === 'from-panorama')
+     ? dataWidth / 4
+     : parseInt(size);
+}
 
-  const faceWidth = Math.min(maxWidth, readData.width / 4);
+function renderFace({data: readData, face, rotation, interpolation, size, maxWidth = Infinity}) {
+
+  const faceWidth = Math.min(maxWidth, getSize(size, readData.width));
   const faceHeight = faceWidth;
 
   const cube = {};

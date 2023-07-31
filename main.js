@@ -1,3 +1,5 @@
+import * as dragAndDrop from './drag-and-drop.js';
+
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -80,15 +82,33 @@ function getDataURL(imgData, extension) {
 const dom = {
   imageInput: document.getElementById('imageInput'),
   faces: document.getElementById('faces'),
-  generating: document.getElementById('generating')
+  generating: document.getElementById('generating'),
+  save: document.getElementById('save'),
+  saveInfo: document.getElementById('save-info'),
 };
 
-dom.imageInput.addEventListener('change', loadImage);
+function saveImages() {
+  for (const child of dom.faces.children) {
+    child.click();
+  };
+}
+
+dom.save.addEventListener('click', saveImages)
+dom.imageInput.addEventListener('change', loadImageFromImageInput);
+
+dragAndDrop.setup({
+  msg: 'drop image file',
+});
+dragAndDrop.onDropFile(_file => {
+  file = _file;
+  loadImage();
+});
 
 const settings = {
   cubeRotation: new Input('cubeRotation', loadImage),
   interpolation: new RadioInput('interpolation', loadImage),
   format: new RadioInput('format', loadImage),
+  size: new RadioInput('size', loadImage),
 };
 
 const facePositions = {
@@ -100,13 +120,8 @@ const facePositions = {
   ny: {x: 1, y: 2}
 };
 
+let file;
 function loadImage() {
-  const file = dom.imageInput.files[0];
-
-  if (!file) {
-    return;
-  }
-
   const img = new Image();
 
   img.src = URL.createObjectURL(file);
@@ -122,12 +137,23 @@ function loadImage() {
   });
 }
 
+function loadImageFromImageInput() {
+  file = dom.imageInput.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  loadImageImpl();
+}
+
 let finished = 0;
 let workers = [];
 
 function processImage(data) {
   removeChildren(dom.faces);
   dom.generating.style.visibility = 'visible';
+  dom.saveInfo.disabled = true;
 
   for (let worker of workers) {
     worker.terminate();
@@ -147,6 +173,7 @@ function renderFace(data, faceName, position) {
     face: faceName,
     rotation: Math.PI * settings.cubeRotation.value / 180,
     interpolation: settings.interpolation.value,
+    size: settings.size.value,
   };
 
   const worker = new Worker('convert.js');
@@ -161,6 +188,7 @@ function renderFace(data, faceName, position) {
 
     if (finished === 6) {
       dom.generating.style.visibility = 'hidden';
+      dom.saveInfo.disabled = false;  
       finished = 0;
       workers = [];
     }
