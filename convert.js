@@ -121,38 +121,43 @@ function copyPixelLanczos(read, write) {
   return kernelResample(read, write, filterSize, kernel);
 }
 
+
+
+
 const orientations = {
-  pz: (out, x, y) => {
+  skyboxRt: (out, x, y) => {
     out.x = -1;
     out.y = -x;
     out.z = -y;
   },
-  nz: (out, x, y) => {
+  skyboxLf: (out, x, y) => {
     out.x = 1;
     out.y = x;
     out.z = -y;
   },
-  px: (out, x, y) => {
+  skyboxFt: (out, x, y) => {
     out.x = x;
     out.y = -1;
     out.z = -y;
   },
-  nx: (out, x, y) => {
+  skyboxBk: (out, x, y) => {
     out.x = -x;
     out.y = 1;
     out.z = -y;
   },
-  py: (out, x, y) => {
+  skyboxUp: (out, x, y) => {
     out.x = -y;
     out.y = -x;
     out.z = 1;
   },
-  ny: (out, x, y) => {
+  skyboxDn: (out, x, y) => {
     out.x = y;
     out.y = -x;
     out.z = -1;
   }
 };
+
+
 
 function renderFace({data: readData, face, rotation, interpolation, maxWidth = Infinity}) {
 

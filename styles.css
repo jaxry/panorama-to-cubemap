@@ -1,0 +1,34 @@
+body {
+    margin: 1em auto;
+    max-width: 800px;
+}
+
+#cubemap {
+    width: 800px;
+    height: 600px;
+    position: relative;
+    border: 1px solid #888;
+    background: #eee;
+    margin-top: 15px;
+}
+
+
+
+
+
+
+
+.hidden-file-input {
+    display: none; 
+}
+
+.custom-file-upload {
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    display: inline-block;
+}
+
+.custom-file-upload:hover {
+    background-color: #f0f0f0;
+}

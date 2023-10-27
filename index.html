@@ -1,82 +1,137 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="description" content="Convert a 360° panorama to a cubemap.">
-  <title>Panorama to Cubemap</title>
-  <style>
-    body {
-      margin: 1em auto;
-      max-width: 800px;
-    }
-    .settings > * {
-      margin-top: 12px;
-      margin-bottom: 12px;
-    }
-    #cubemap {
-      width: 800px;
-      height: 600px;
-      position: relative;
-      border: 1px solid #888;
-      background: #eee;
-      margin-top: 15px;
-    }
-  </style>
-</head>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="description"
+            content="Convert a 360° panorama to a cubemap."
+        />
+        <title>パノラマ画像をRobloxスカイボックスに変換</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
 
-<body>
-  <header>
-    <h1>Panorama to Cubemap</h1>
-    <aside>Convert a 360° panorama to six cube faces.</aside>
-  </header>
+    <body>
+        <header>
+            <h1>パノラマ画像をRobloxスカイボックスに変換</h1>
+            <aside>
+                360°パノラマ画像をRobroxの6面スカイボックスに変換します
+            </aside>
+        </header>
 
-  <main>
-    <section>
-      <h2>Upload</h2>
-      <label>Upload a panoramic image: <input id="imageInput" type="file" accept="image/*"></label>
-      <ul>
-        <li>The image should be formatted with the equirectangular projection.</li>
-        <li>The image should have an aspect ratio of 2:1 (the width must be exactly twice the height).</li>
-      </ul>
-      <p>A cubemap will be generated from your image.</p>
-    </section>
+        <main>
+            <hr />
+            <section>
+                <h2>1. パノラマ画像を用意する</h2>
+                <ul>
+                    <li>縦横比が1:2の等角円筒図法のパノラマ画像</li>
+                    <li>
+                        画像フォーマットはPNG、Jpeg、WebPに対応（EXR、HDRには非対応です。変換するには<a
+                            href="https://convertio.co/ja/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            >こちら</a
+                        >へ）
+                    </li>
+                    <li>
+                        パノラマ画像の入手は、例えば<a
+                            href="https://polyhaven.com/hdris"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            >Poly Haven</a
+                        >から。
+                    </li>
+                </ul>
+            </section>
+            <hr />
+            <section>
+                <h2>2. パノラマ画像をアップロード</h2>
+                <figure>
+                    <label for="imageInput" class="custom-file-upload">
+                        ファイルを選択
+                    </label>
+                    <input
+                        id="imageInput"
+                        type="file"
+                        accept="image/*"
+                        class="hidden-file-input"
+                    />
+                    <span id="fileNameDisplay"></span>
+                </figure>
+            </section>
 
-    <section class="settings">
-      <h2>Settings</h2>
-      <div>
-        <label>Cube Rotation: <input id="cubeRotation" type="number" min="0" max="359" value="180">°</label>
-      </div>
-      <fieldset title="The resampling algorithm to use when generating the cubemap.">
-        <legend>Interpolation type</legend>
-        <label><input type="radio" name="interpolation" value="lanczos" checked>Lanczos (best but slower)</label>
-        <label><input type="radio" name="interpolation" value="cubic">Cubic (sharper details)</label>
-        <label><input type="radio" name="interpolation" value="linear">Linear (softer details)</label>
-      </fieldset>
-      <fieldset>
-        <legend>Output format</legend>
-        <label><input type="radio" name="format" value="png" checked>PNG</label>
-        <label><input type="radio" name="format" value="jpg">JPEG</label>
-      </fieldset>
-    </section>
+            <section>
+                <h3>キューブの回転</h3>
+                <div>
+                    <label for="cubeRotation">正面の向きを変更できます:</label>
+                    <input
+                        id="cubeRotation"
+                        type="number"
+                        min="0"
+                        max="359"
+                        value="0"
+                    />°
+                </div>
+                <div id="cubemap">
+                    <b id="generating" style="visibility: hidden">生成中...</b>
+                    <output id="faces"></output>
+                </div>
+            </section>
+            <section>
+                <h2>3. ダウンロード</h2>
+                <p>
+                    6面をまとめてZIPファイルで<a href="#" id="downloadAllLink"
+                        >ダウンロード</a
+                    >
+                </p>
+            </section>
+            <hr />
 
-    <section>
-      <h2>Output</h2>
-      <p>Click each cube face to save it to your computer.</p>
-      <div id="cubemap">
-        <b id="generating" style="visibility:hidden">Generating...</b>
-        <output id="faces"></output>
-      </div>
-    </section>
-  </main>
+            <section>
+                <h2>4. Robloxで設定</h2>
+                <ol>
+                    <li>ダウンロードしたZIPを解凍します。</li>
+                    <li>解凍したファイルをRoblox Studioにインポートします。</li>
+                    <li>
+                        Roblox
+                        Studioで、LightingのSkyに設定します。ファイル名の末尾とプロパティ名を合わせてください。
+                    </li>
+                </ol>
+            </section>
+        </main>
 
-  <footer>
-    <p>
-      <small>By <a href="https://github.com/jaxry">Lucas Crane</a></small>
-      <br>
-      <small>Design by <a href="http://motherfuckingwebsite.com/">mf</a></small>
-    </p>
-  </footer>
+        <footer>
+            <hr />
+            <p>
+                <small
+                    >Original code by
+                    <a
+                        href="https://github.com/jaxry"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >Lucas Crane</a
+                    >, Original design by
+                    <a
+                        href="http://motherfuckingwebsite.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >mf</a
+                    ></small
+                >
+                <br />
+                <small
+                    >Modified and improved by
+                    <a
+                        href="https://twitter.com/snj_esk"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >Shinji esk.</a
+                    ></small
+                >
+            </p>
+        </footer>
 
-  <script src="main.js"></script>
-</body>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+        <script src="main.js"></script>
+    </body>
 </html>
