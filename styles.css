@@ -14,8 +14,16 @@ body {
 
 
 
+.dropzone-area {
+    border: 2px dashed #cccccc;
+    padding: 20px;
+    text-align: center;
+    transition: background-color 0.3s;  /* Add this line for smooth color transition */
+}
 
-
+.dropzone-area.dragging {
+    background-color: #f0f0f0;  /* Change this to any color you prefer */
+}
 
 
 .hidden-file-input {
@@ -31,4 +39,9 @@ body {
 
 .custom-file-upload:hover {
     background-color: #f0f0f0;
+}
+
+
+.error-message {
+    color: red;
 }

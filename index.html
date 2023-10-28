@@ -7,6 +7,12 @@
             name="description"
             content="360°パノラマ画像をRobroxの6面スカイボックス画像に変換します"
         />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css"
+        />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+
         <title>Roblox パノラマ to スカイ</title>
         <link rel="stylesheet" href="styles.css" />
     </head>
@@ -47,19 +53,22 @@
             <section>
                 <h2>2. パノラマ画像をアップロード</h2>
                 <figure>
-                    <label for="imageInput" class="custom-file-upload">
-                        ファイルを選択
-                    </label>
-                    <input
-                        id="imageInput"
-                        type="file"
-                        accept="image/*"
-                        class="hidden-file-input"
-                    />
-                    <span id="fileNameDisplay"></span>
+                    <div id="dropzone" class="dropzone-area">
+                        <label for="imageInput" class="custom-file-upload">
+                            ファイルを選択またはここにドラッグアンドドロップ
+                        </label>
+                        <input
+                            id="imageInput"
+                            type="file"
+                            accept="image/*"
+                            class="hidden-file-input"
+                        />
+                        <div id="fileNameDisplay"></div>
+                        <div id="errorMessage" class="error-message"></div>
+                    </div>
                 </figure>
             </section>
-
+            
             <section>
                 <h3>キューブの回転</h3>
                 <div>
@@ -79,8 +88,7 @@
             </section>
             <section>
                 <h2>3. ダウンロード</h2>
-                <p>各面をクリックして個別にダウンロードしてください。
-                </p>
+                <p>各面をクリックして個別にダウンロードしてください。</p>
             </section>
             <hr />
 
@@ -130,5 +138,15 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
         <script src="main.js"></script>
+        <script>
+            // Dropzone class configuration
+            Dropzone.options.imageInput = {
+                url: "/upload", // Replace with your upload URL
+                maxFilesize: 10, // Maximum filesize in MB
+                acceptedFiles: "image/*",
+                dictDefaultMessage:
+                    "画像をここにドラッグアンドドロップまたはクリックしてアップロード",
+            };
+        </script>
     </body>
 </html>

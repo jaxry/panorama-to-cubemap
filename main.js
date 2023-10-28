@@ -1,200 +1,452 @@
 const CubeMapApp = (() => {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  let loadedFileName = "";
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    let loadedFileName = "";
 
-  class Input {
-      constructor(id, onChange) {
-          this.input = document.getElementById(id);
-          this.input.addEventListener("change", onChange);
-          this.valueAttrib = this.input.type === "checkbox" ? "checked" : "value";
-      }
+    class Input {
+        constructor(id, onChange) {
+            this.input = document.getElementById(id);
+            this.input.addEventListener("change", onChange);
+            this.valueAttrib =
+                this.input.type === "checkbox" ? "checked" : "value";
+        }
 
-      get value() {
-          return this.input[this.valueAttrib];
-      }
-  }
+        get value() {
+            return this.input[this.valueAttrib];
+        }
+    }
 
-  class CubeFace {
-      constructor(faceName) {
-          this.faceName = faceName;
-          this.anchor = document.createElement("a");
-          this.anchor.style.position = "absolute";
-          this.anchor.title = faceName;
-          this.img = document.createElement("img");
-          this.img.style.filter = "blur(4px)";
-          this.anchor.appendChild(this.img);
-      }
+    class CubeFace {
+        constructor(faceName) {
+            this.faceName = faceName;
+            this.anchor = document.createElement("a");
+            this.anchor.style.position = "absolute";
+            this.anchor.title = faceName;
+            this.img = document.createElement("img");
+            this.img.style.filter = "blur(4px)";
+            this.anchor.appendChild(this.img);
+        }
 
-      setPreview(url, x, y) {
-          this.img.src = url;
-          this.anchor.style.left = `${x}px`;
-          this.anchor.style.top = `${y}px`;
-      }
+        setPreview(url, x, y) {
+            this.img.src = url;
+            this.anchor.style.left = `${x}px`;
+            this.anchor.style.top = `${y}px`;
+        }
 
-      setDownload(url) {
-          this.anchor.href = url;
-          this.anchor.download = `${loadedFileName}_${this.faceName}.png`;
-          this.img.style.filter = "";
-      }
-  }
+        setDownload(url) {
+            this.anchor.href = url;
+            this.anchor.download = `${loadedFileName}_${this.faceName}.png`;
+            this.img.style.filter = "";
+        }
+    }
 
-  const mimeType = {
-      png: "image/png",
-  };
+    const mimeType = {
+        png: "image/png",
+    };
 
-  async function getDataURL(imgData) {
-      canvas.width = imgData.width;
-      canvas.height = imgData.height;
-      ctx.putImageData(imgData, 0, 0);
-      return new Promise((resolve) => {
-          canvas.toBlob((blob) => resolve(URL.createObjectURL(blob)), mimeType["png"], 0.92);
-      });
-  }
+    async function getDataURL(imgData) {
+        canvas.width = imgData.width;
+        canvas.height = imgData.height;
+        ctx.putImageData(imgData, 0, 0);
+        return new Promise((resolve) => {
+            canvas.toBlob(
+                (blob) => resolve(URL.createObjectURL(blob)),
+                mimeType["png"],
+                0.92
+            );
+        });
+    }
 
-  function removeChildren(node) {
-      while (node.firstChild) {
-          node.removeChild(node.firstChild);
-      }
-  }
+    function removeChildren(node) {
+        while (node.firstChild) {
+            node.removeChild(node.firstChild);
+        }
+    }
 
-  const dom = {
-      imageInput: document.getElementById("imageInput"),
-      faces: document.getElementById("faces"),
-      generating: document.getElementById("generating"),
-      fileNameDisplay: document.getElementById("fileNameDisplay")
-  };
+    const dom = {
+        imageInput: document.getElementById("imageInput"),
+        dropzone: document.getElementById("dropzone"), // New line
+        faces: document.getElementById("faces"),
+        generating: document.getElementById("generating"),
+        fileNameDisplay: document.getElementById("fileNameDisplay"),
+        errorMessage: document.getElementById("errorMessage"),
+    };
 
-  const settings = {
-      cubeRotation: new Input("cubeRotation", loadImage),
-  };
+    const settings = {
+        cubeRotation: new Input("cubeRotation", loadImage),
+    };
 
-  const facePositions = {
-      skyboxRt: { x: 1, y: 1 },
-      skyboxLf: { x: 3, y: 1 },
-      skyboxFt: { x: 2, y: 1 },
-      skyboxBk: { x: 0, y: 1 },
-      skyboxUp: { x: 1, y: 0 },
-      skyboxDn: { x: 1, y: 2 },
-  };
+    const facePositions = {
+        skyboxRt: { x: 1, y: 1 },
+        skyboxLf: { x: 3, y: 1 },
+        skyboxFt: { x: 2, y: 1 },
+        skyboxBk: { x: 0, y: 1 },
+        skyboxUp: { x: 1, y: 0 },
+        skyboxDn: { x: 1, y: 2 },
+    };
 
-  dom.imageInput.addEventListener("change", loadImage);
+    dom.imageInput.addEventListener("change", loadImage);
 
-  function loadImage() {
-      const file = getFile();
-      if (!file) return;
-      displayFileName(file);
+    // New drag and drop event listeners
+    dom.dropzone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        dom.dropzone.classList.add("dragging");
+    });
 
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
+    dom.dropzone.addEventListener("dragleave", () => {
+        dom.dropzone.classList.remove("dragging");
+    });
 
-      img.addEventListener("load", () => {
-          const { width, height } = img;
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0);
-          const data = ctx.getImageData(0, 0, width, height);
+    dom.dropzone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        dom.dropzone.classList.remove("dragging");
 
-          processImage(data);
-      });
-  }
+        // Clear any existing error message
+        dom.errorMessage.textContent = "";
 
-  function getFile() {
-      return dom.imageInput.files[0];
-  }
+        const files = event.dataTransfer.files;
+        if (files.length > 1) {
+            dom.errorMessage.textContent =
+                "アップロードできるファイルはひとつだけです。";
+            return;
+        }
 
-  function displayFileName(file) {
-      dom.fileNameDisplay.textContent = file.name;
-      loadedFileName = file.name.split(".")[0];
-  }
+        const file = files[0];
+        if (file && file.type.startsWith("image/")) {
+            dom.imageInput.files = event.dataTransfer.files;
+            loadImage();
+        }
+    });
 
-  let finished = 0;
-  let workers = [];
+    function loadImage() {
+        const file = getFile();
+        if (!file) return;
+        displayFileName(file);
 
-  function processImage(data) {
-      removeChildren(dom.faces);
-      dom.generating.style.visibility = "visible";
-      workers.forEach((worker) => worker.terminate());
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
 
-      Object.entries(facePositions).forEach(([faceName, position]) => {
-          renderFace(data, faceName, position);
-      });
-  }
+        img.addEventListener("load", () => {
+            const { width, height } = img;
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0);
+            const data = ctx.getImageData(0, 0, width, height);
 
-  function renderFace(data, faceName, position) {
-      const face = new CubeFace(faceName);
-      dom.faces.appendChild(face.anchor);
+            processImage(data);
+        });
+    }
 
-      const options = {
-          data,
-          face: faceName,
-          rotation: (Math.PI * settings.cubeRotation.value) / 180,
-          interpolation: "lanczos",
-      };
+    function getFile() {
+        return dom.imageInput.files[0];
+    }
 
-      const worker = new Worker("convert.js");
+    function displayFileName(file) {
+        dom.fileNameDisplay.textContent = file.name;
+        loadedFileName = file.name.split(".")[0];
+    }
 
-      const setDownload = async ({ data: imageData }) => {
-          const url = await getDataURL(imageData);
-          face.setDownload(url);
+    let finished = 0;
+    let workers = [];
 
-          finished++;
-          if (finished === 6) {
-              dom.generating.style.visibility = "hidden";
-              finished = 0;
-              workers = [];
-          }
-      };
+    function processImage(data) {
+        removeChildren(dom.faces);
+        dom.generating.style.visibility = "visible";
+        workers.forEach((worker) => worker.terminate());
 
-      const setPreview = async ({ data: imageData }) => {
-          const x = imageData.width * position.x;
-          const y = imageData.height * position.y;
-          const url = await getDataURL(imageData);
-          face.setPreview(url, x, y);
+        Object.entries(facePositions).forEach(([faceName, position]) => {
+            renderFace(data, faceName, position);
+        });
+    }
 
-          worker.onmessage = setDownload;
-          worker.postMessage(options);
-      };
+    function renderFace(data, faceName, position) {
+        const face = new CubeFace(faceName);
+        dom.faces.appendChild(face.anchor);
 
-      worker.onmessage = setPreview;
-      worker.postMessage({ ...options, maxWidth: 200, interpolation: "linear" });
+        const options = {
+            data,
+            face: faceName,
+            rotation: (Math.PI * settings.cubeRotation.value) / 180,
+            interpolation: "lanczos",
+        };
 
-      workers.push(worker);
-  }
+        const worker = new Worker("convert.js");
 
-  async function downloadAllImagesAsZip() {
-      const zip = new JSZip();
+        const setDownload = async ({ data: imageData }) => {
+            const url = await getDataURL(imageData);
+            face.setDownload(url);
 
-      for (let faceName in facePositions) {
-          const face = document.querySelector(`a[title="${faceName}"] img`);
-          const imgData = await fetch(face.src).then((r) => r.blob());
-          zip.file(`${loadedFileName}_${faceName}.png`, imgData, {
-              binary: true,
-          });
-      }
+            finished++;
+            if (finished === 6) {
+                dom.generating.style.visibility = "hidden";
+                finished = 0;
+                workers = [];
+            }
+        };
 
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      const zipURL = URL.createObjectURL(zipBlob);
+        const setPreview = async ({ data: imageData }) => {
+            const x = imageData.width * position.x;
+            const y = imageData.height * position.y;
+            const url = await getDataURL(imageData);
+            face.setPreview(url, x, y);
 
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = zipURL;
-      a.download = `${loadedFileName}_cubemap.zip`;
+            worker.onmessage = setDownload;
+            worker.postMessage(options);
+        };
 
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-  }
+        worker.onmessage = setPreview;
+        worker.postMessage({
+            ...options,
+            maxWidth: 200,
+            interpolation: "linear",
+        });
 
-  document.getElementById("downloadAllLink").addEventListener("click", function (event) {
-      event.preventDefault();
-      downloadAllImagesAsZip();
-  });
+        workers.push(worker);
+    }
 
-  return {
-      loadImage,
-      downloadAllImagesAsZip
-  };
+    async function downloadAllImagesAsZip() {
+        const zip = new JSZip();
+
+        for (let faceName in facePositions) {
+            const face = document.querySelector(`a[title="${faceName}"] img`);
+            const imgData = await fetch(face.src).then((r) => r.blob());
+            zip.file(`${loadedFileName}_${faceName}.png`, imgData, {
+                binary: true,
+            });
+        }
+
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const zipURL = URL.createObjectURL(zipBlob);
+
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = zipURL;
+        a.download = `${loadedFileName}_cubemap.zip`;
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    document
+        .getElementById("downloadAllLink")
+        .addEventListener("click", function (event) {
+            event.preventDefault();
+            downloadAllImagesAsZip();
+        });
+
+    return {
+        loadImage,
+        downloadAllImagesAsZip,
+    };
 })();
 
+// const CubeMapApp = (() => {
+//     const canvas = document.createElement("canvas");
+//     const ctx = canvas.getContext("2d");
+//     let loadedFileName = "";
 
+//     class Input {
+//         constructor(id, onChange) {
+//             this.input = document.getElementById(id);
+//             this.input.addEventListener("change", onChange);
+//             this.valueAttrib =
+//                 this.input.type === "checkbox" ? "checked" : "value";
+//         }
+
+//         get value() {
+//             return this.input[this.valueAttrib];
+//         }
+//     }
+
+//     class CubeFace {
+//         constructor(faceName) {
+//             this.faceName = faceName;
+//             this.anchor = document.createElement("a");
+//             this.anchor.style.position = "absolute";
+//             this.anchor.title = faceName;
+//             this.img = document.createElement("img");
+//             this.img.style.filter = "blur(4px)";
+//             this.anchor.appendChild(this.img);
+//         }
+
+//         setPreview(url, x, y) {
+//             this.img.src = url;
+//             this.anchor.style.left = `${x}px`;
+//             this.anchor.style.top = `${y}px`;
+//         }
+
+//         setDownload(url) {
+//             this.anchor.href = url;
+//             this.anchor.download = `${loadedFileName}_${this.faceName}.png`;
+//             this.img.style.filter = "";
+//         }
+//     }
+
+//     const mimeType = {
+//         png: "image/png",
+//     };
+
+//     async function getDataURL(imgData) {
+//         canvas.width = imgData.width;
+//         canvas.height = imgData.height;
+//         ctx.putImageData(imgData, 0, 0);
+//         return new Promise((resolve) => {
+//             canvas.toBlob(
+//                 (blob) => resolve(URL.createObjectURL(blob)),
+//                 mimeType["png"],
+//                 0.92
+//             );
+//         });
+//     }
+
+//     function removeChildren(node) {
+//         while (node.firstChild) {
+//             node.removeChild(node.firstChild);
+//         }
+//     }
+
+//     const dom = {
+//         imageInput: document.getElementById("imageInput"),
+//         faces: document.getElementById("faces"),
+//         generating: document.getElementById("generating"),
+//         fileNameDisplay: document.getElementById("fileNameDisplay"),
+//     };
+
+//     const settings = {
+//         cubeRotation: new Input("cubeRotation", loadImage),
+//     };
+
+//     const facePositions = {
+//         skyboxRt: { x: 1, y: 1 },
+//         skyboxLf: { x: 3, y: 1 },
+//         skyboxFt: { x: 2, y: 1 },
+//         skyboxBk: { x: 0, y: 1 },
+//         skyboxUp: { x: 1, y: 0 },
+//         skyboxDn: { x: 1, y: 2 },
+//     };
+
+//     dom.imageInput.addEventListener("change", loadImage);
+
+//     function loadImage() {
+//         const file = getFile();
+//         if (!file) return;
+//         displayFileName(file);
+
+//         const img = new Image();
+//         img.src = URL.createObjectURL(file);
+
+//         img.addEventListener("load", () => {
+//             const { width, height } = img;
+//             canvas.width = width;
+//             canvas.height = height;
+//             ctx.drawImage(img, 0, 0);
+//             const data = ctx.getImageData(0, 0, width, height);
+
+//             processImage(data);
+//         });
+//     }
+
+//     function getFile() {
+//         return dom.imageInput.files[0];
+//     }
+
+//     function displayFileName(file) {
+//         dom.fileNameDisplay.textContent = file.name;
+//         loadedFileName = file.name.split(".")[0];
+//     }
+
+//     let finished = 0;
+//     let workers = [];
+
+//     function processImage(data) {
+//         removeChildren(dom.faces);
+//         dom.generating.style.visibility = "visible";
+//         workers.forEach((worker) => worker.terminate());
+
+//         Object.entries(facePositions).forEach(([faceName, position]) => {
+//             renderFace(data, faceName, position);
+//         });
+//     }
+
+//     function renderFace(data, faceName, position) {
+//         const face = new CubeFace(faceName);
+//         dom.faces.appendChild(face.anchor);
+
+//         const options = {
+//             data,
+//             face: faceName,
+//             rotation: (Math.PI * settings.cubeRotation.value) / 180,
+//             interpolation: "lanczos",
+//         };
+
+//         const worker = new Worker("convert.js");
+
+//         const setDownload = async ({ data: imageData }) => {
+//             const url = await getDataURL(imageData);
+//             face.setDownload(url);
+
+//             finished++;
+//             if (finished === 6) {
+//                 dom.generating.style.visibility = "hidden";
+//                 finished = 0;
+//                 workers = [];
+//             }
+//         };
+
+//         const setPreview = async ({ data: imageData }) => {
+//             const x = imageData.width * position.x;
+//             const y = imageData.height * position.y;
+//             const url = await getDataURL(imageData);
+//             face.setPreview(url, x, y);
+
+//             worker.onmessage = setDownload;
+//             worker.postMessage(options);
+//         };
+
+//         worker.onmessage = setPreview;
+//         worker.postMessage({
+//             ...options,
+//             maxWidth: 200,
+//             interpolation: "linear",
+//         });
+
+//         workers.push(worker);
+//     }
+
+//     async function downloadAllImagesAsZip() {
+//         const zip = new JSZip();
+
+//         for (let faceName in facePositions) {
+//             const face = document.querySelector(`a[title="${faceName}"] img`);
+//             const imgData = await fetch(face.src).then((r) => r.blob());
+//             zip.file(`${loadedFileName}_${faceName}.png`, imgData, {
+//                 binary: true,
+//             });
+//         }
+
+//         const zipBlob = await zip.generateAsync({ type: "blob" });
+//         const zipURL = URL.createObjectURL(zipBlob);
+
+//         const a = document.createElement("a");
+//         a.style.display = "none";
+//         a.href = zipURL;
+//         a.download = `${loadedFileName}_cubemap.zip`;
+
+//         document.body.appendChild(a);
+//         a.click();
+//         document.body.removeChild(a);
+//     }
+
+//     document
+//         .getElementById("downloadAllLink")
+//         .addEventListener("click", function (event) {
+//             event.preventDefault();
+//             downloadAllImagesAsZip();
+//         });
+
+//     return {
+//         loadImage,
+//         downloadAllImagesAsZip,
+//     };
+// })();
