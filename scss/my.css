@@ -1,0 +1,47 @@
+body {
+    margin: 1em auto;
+    max-width: 800px;
+}
+
+#cubemap {
+    width: 800px;
+    height: 600px;
+    position: relative;
+    border: 1px solid #888;
+    background: #eee;
+    margin-top: 15px;
+}
+
+
+
+.dropzone-area {
+    border: 2px dashed #cccccc;
+    padding: 20px;
+    text-align: center;
+    transition: background-color 0.3s;  /* Add this line for smooth color transition */
+}
+
+.dropzone-area.dragging {
+    background-color: #f0f0f0;  /* Change this to any color you prefer */
+}
+
+
+.hidden-file-input {
+    display: none; 
+}
+
+.custom-file-upload {
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    display: inline-block;
+}
+
+.custom-file-upload:hover {
+    background-color: #f0f0f0;
+}
+
+
+.error-message {
+    color: red;
+}
